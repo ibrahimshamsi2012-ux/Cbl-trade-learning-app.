@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CBL Trade Learning Portal</title>
+    <!-- Load Tailwind CSS for modern styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Custom Dark Theme Styling to match GitHub aesthetic */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0d1117; /* GitHub Dark Background */
+            color: #c9d1d9; /* Light Gray Text */
+        }
+        .card {
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.3);
+        }
+    </style>
+</head>
+<body class="min-h-screen p-4 sm:p-8 flex items-center justify-center">
+
+    <!-- Main Responsive Container -->
+    <div class="w-full max-w-3xl bg-[#161b22] p-6 sm:p-10 rounded-2xl shadow-2xl border border-[#30363d] space-y-8">
+        
+        <header class="text-center">
+            <h1 class="text-4xl sm:text-5xl font-extrabold text-[#58a6ff] mb-3 leading-tight">CBL Trade Learning Portal</h1>
+            <p class="text-gray-400 text-md sm:text-lg italic">
+                The clean, working base for your future trading application.
+            </p>
+        </header>
+
+        <!-- Status Message / Deployment Success Indicator -->
+        <div class="p-4 bg-green-900/50 border border-green-500 rounded-lg text-green-300 text-center font-semibold">
+            ✅ Deployment Success Confirmed. This minimal file fixes the previous build error.
+        </div>
+
+        <!-- Feature Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            
+            <!-- Feature 1: Real-Time Charts -->
+            <div class="card p-6 bg-[#21262d] rounded-xl border border-[#30363d] space-y-3">
+                <span class="text-4xl text-green-400 block mb-2">📈</span>
+                <h2 class="text-xl font-bold text-white">Real-Time Charting</h2>
+                <p class="text-gray-400 text-sm">Monitor simulated asset prices and visualize key market indicators.</p>
+                <button class="w-full mt-3 py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition duration-150">
+                    View Charts
+                </button>
+            </div>
+
+            <!-- Feature 2: AI Trading Assistant -->
+            <div class="card p-6 bg-[#21262d] rounded-xl border border-[#30363d] space-y-3">
+                <span class="text-4xl text-yellow-400 block mb-2">🤖</span>
+                <h2 class="text-xl font-bold text-white">AI Assistant Chat</h2>
+                <p class="text-gray-400 text-sm">Interact with an AI for trading advice, definitions, and market summaries.</p>
+                <button class="w-full mt-3 py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition duration-150">
+                    Launch Chat
+                </button>
+            </div>
+            
+            <!-- Feature 3: Portfolio Simulation -->
+            <div class="card p-6 bg-[#21262d] rounded-xl border border-[#30363d] space-y-3">
+                <span class="text-4xl text-purple-400 block mb-2">💼</span>
+                <h2 class="text-xl font-bold text-white">Simulated Portfolio</h2>
+                <p class="text-gray-400 text-sm">Practice buying and selling crypto without real risk. Tracks P&L.</p>
+                <button class="w-full mt-3 py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition duration-150">
+                    Start Trading
+                </button>
+            </div>
+
+             <!-- Feature 4: Learning Resources -->
+            <div class="card p-6 bg-[#21262d] rounded-xl border border-[#30363d] space-y-3">
+                <span class="text-4xl text-red-400 block mb-2">📚</span>
+                <h2 class="text-xl font-bold text-white">Educational Content</h2>
+                <p class="text-gray-400 text-sm">Access tutorials on candlesticks, indicators, and risk management.</p>
+                <button class="w-full mt-3 py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition duration-150">
+                    Explore Resources
+                </button>
+            </div>
+
+        </div> <!-- End Feature Grid -->
+
+        <footer class="mt-8 pt-4 border-t border-[#30363d] text-center text-gray-500 text-xs">
+            <p>Vercel Deployment Fixed &bull; CBL Project Base v1.0</p>
+        </footer>
+    </div>
+
+</body>
+</html>
+
