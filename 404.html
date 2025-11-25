@@ -1,17 +1,19 @@
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CBL Trade Learning Portal</title>
+    <title>CBL Trade Learning Portal - AI Ready</title> 
     <!-- Load Tailwind CSS for modern styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        /* Custom Dark Theme Styling to match GitHub aesthetic */
+        /* Custom Dark Theme Styling for mobile first design */
         body {
             font-family: 'Inter', sans-serif;
             background-color: #0d1117; /* GitHub Dark Background */
             color: #c9d1d9; /* Light Gray Text */
+            min-height: 100vh;
         }
         .card {
             transition: transform 0.2s, box-shadow 0.2s;
@@ -20,12 +22,26 @@
             transform: translateY(-4px);
             box-shadow: 0 10px 15px rgba(0, 0, 0, 0.3);
         }
+        /* Mobile-friendly chat modal styles */
+        .chat-modal-content {
+            height: 95vh; /* Take up most of the viewport height */
+            max-width: 100%;
+            margin: 2.5vh auto;
+            border-radius: 1rem;
+        }
+        .chat-messages {
+            height: calc(100% - 140px); /* Account for header and input */
+            overflow-y: auto;
+        }
+        .message-bubble {
+            max-width: 85%;
+        }
     </style>
 </head>
-<body class="min-h-screen p-4 sm:p-8 flex items-center justify-center">
+<body class="p-4 sm:p-8 flex items-start justify-center">
 
     <!-- Main Responsive Container -->
-    <div class="w-full max-w-3xl bg-[#161b22] p-6 sm:p-10 rounded-2xl shadow-2xl border border-[#30363d] space-y-8">
+    <div id="main-content" class="w-full max-w-3xl bg-[#161b22] p-6 sm:p-10 rounded-2xl shadow-2xl border border-[#30363d] space-y-8">
         
         <header class="text-center">
             <h1 class="text-4xl sm:text-5xl font-extrabold text-[#58a6ff] mb-3 leading-tight">CBL Trade Learning Portal</h1>
@@ -34,5 +50,248 @@
             </p>
         </header>
 
-        <!-- Status ">
+        <!-- Status Message / Deployment Success Indicator -->
+        <div class="p-4 bg-green-900/50 border border-green-500 rounded-lg text-green-300 text-center font-semibold">
+            ✅ Deployment Success Confirmed. Click "Launch Chat" to start.
+        </div>
+
+        <!-- Feature Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            
+            <!-- Feature 1: Real-Time Charts -->
+            <div class="card p-6 bg-[#21262d] rounded-xl border border-[#30363d] space-y-3">
+                <span class="text-4xl text-green-400 block mb-2">📈</span>
+                <h2 class="text-xl font-bold text-white">Real-Time Charting</h2>
+                <p class="text-gray-400 text-sm">Monitor simulated asset prices and visualize key market indicators.</p>
+                <button class="w-full mt-3 py-2 px-4 bg-gray-600 cursor-not-allowed text-gray-400 font-medium rounded-lg transition duration-150" disabled>
+                    (Coming Soon)
+                </button>
+            </div>
+
+            <!-- Feature 2: AI Trading Assistant -->
+            <div class="card p-6 bg-[#21262d] rounded-xl border border-[#30363d] space-y-3">
+                <span class="text-4xl text-yellow-400 block mb-2">🤖</span>
+                <h2 class="text-xl font-bold text-white">AI Assistant Chat</h2>
+                <p class="text-gray-400 text-sm">Interact with an AI for trading advice, definitions, and market summaries.</p>
+                <button id="launch-chat-btn" class="w-full mt-3 py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition duration-150">
+                    Launch Chat
+                </button>
+            </div>
+            
+            <!-- Feature 3: Portfolio Simulation -->
+            <div class="card p-6 bg-[#21262d] rounded-xl border border-[#30363d] space-y-3">
+                <span class="text-4xl text-purple-400 block mb-2">💼</span>
+                <h2 class="text-xl font-bold text-white">Simulated Portfolio</h2>
+                <p class="text-gray-400 text-sm">Practice buying and selling crypto without real risk. Tracks P&L.</p>
+                <button class="w-full mt-3 py-2 px-4 bg-gray-600 cursor-not-allowed text-gray-400 font-medium rounded-lg transition duration-150" disabled>
+                    (Coming Soon)
+                </button>
+            </div>
+
+             <!-- Feature 4: Learning Resources -->
+            <div class="card p-6 bg-[#21262d] rounded-xl border border-[#30363d] space-y-3">
+                <span class="text-4xl text-red-400 block mb-2">📚</span>
+                <h2 class="text-xl font-bold text-white">Educational Content</h2>
+                <p class="text-gray-400 text-sm">Access tutorials on candlesticks, indicators, and risk management.</p>
+                <button class="w-full mt-3 py-2 px-4 bg-gray-600 cursor-not-allowed text-gray-400 font-medium rounded-lg transition duration-150" disabled>
+                    (Coming Soon)
+                </button>
+            </div>
+
+        </div> <!-- End Feature Grid -->
+
+        <footer class="mt-8 pt-4 border-t border-[#30363d] text-center text-gray-500 text-xs">
+            <p>Vercel Deployment Stabilized &bull; CBL Project Base v2.0 (AI Assistant)</p>
+        </footer>
+    </div>
+
+    <!-- AI Chat Modal (Hidden by default) -->
+    <div id="chat-modal" class="fixed inset-0 bg-black bg-opacity-80 backdrop-blur-sm hidden z-50 transition-opacity duration-300">
+        <div class="chat-modal-content bg-[#161b22] flex flex-col mx-auto p-4 sm:p-6 shadow-2xl border border-[#30363d]">
+            
+            <!-- Modal Header -->
+            <div class="flex justify-between items-center pb-4 border-b border-[#30363d]">
+                <h2 class="text-2xl font-bold text-yellow-400 flex items-center">
+                    🤖 Trade AI Assistant
+                </h2>
+                <button id="close-chat-btn" class="text-gray-400 hover:text-white text-2xl font-bold">
+                    &times;
+                </button>
+            </div>
+            
+            <!-- Chat Messages Display -->
+            <div id="chat-messages" class="chat-messages p-3 sm:p-4 space-y-4">
+                <div class="flex justify-start">
+                    <div class="message-bubble bg-gray-700 p-3 rounded-xl rounded-tl-none shadow-md text-sm">
+                        Hello! I am your CBL Trade AI Assistant. I can explain trading terms, analyze market concepts, or give general advice. How can I help you learn today?
+                    </div>
+                </div>
+                <!-- Messages will be injected here -->
+            </div>
+
+            <!-- Input Area -->
+            <div class="pt-4 border-t border-[#30363d] flex space-x-2">
+                <input type="text" id="user-input" placeholder="Ask about crypto, charts, or indicators..."
+                       class="flex-grow p-3 rounded-lg bg-[#21262d] border border-[#30363d] text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                       onkeydown="if(event.key === 'Enter') document.getElementById('send-btn').click()">
+                <button id="send-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition duration-150 flex items-center justify-center">
+                    Send
+                </button>
+            </div>
+            <div id="error-message" class="text-red-400 text-xs mt-2 hidden"></div>
+        </div>
+    </div>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const chatModal = document.getElementById('chat-modal');
+            const launchChatBtn = document.getElementById('launch-chat-btn');
+            const closeChatBtn = document.getElementById('close-chat-btn');
+            const chatMessages = document.getElementById('chat-messages');
+            const userInput = document.getElementById('user-input');
+            const sendBtn = document.getElementById('send-btn');
+            const errorMessage = document.getElementById('error-message');
+
+            // --- Modal Visibility Logic ---
+            launchChatBtn.addEventListener('click', () => {
+                chatModal.classList.remove('hidden');
+                document.body.style.overflow = 'hidden'; // Prevent scrolling the background
+                userInput.focus();
+            });
+
+            closeChatBtn.addEventListener('click', () => {
+                chatModal.classList.add('hidden');
+                document.body.style.overflow = ''; // Restore scrolling
+            });
+
+            // Close modal when clicking outside (on the overlay)
+            chatModal.addEventListener('click', (e) => {
+                if (e.target === chatModal) {
+                    chatModal.classList.add('hidden');
+                    document.body.style.overflow = '';
+                }
+            });
+
+
+            // --- Chat/Message Rendering Logic ---
+            function displayMessage(text, isUser) {
+                const messageContainer = document.createElement('div');
+                messageContainer.className = `flex ${isUser ? 'justify-end' : 'justify-start'}`;
+
+                const bubble = document.createElement('div');
+                bubble.className = `message-bubble p-3 rounded-xl shadow-md text-sm ${
+                    isUser ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-gray-700 text-gray-200 rounded-tl-none'
+                }`;
+                bubble.innerHTML = text.replace(/\n/g, '<br>'); // Handle new lines from API
+                
+                messageContainer.appendChild(bubble);
+                chatMessages.appendChild(messageContainer);
+
+                // Scroll to the bottom of the chat window
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+
+            // --- API Integration Logic ---
+
+            const API_KEY = ""; // Leave as empty string. Canvas will inject the key at runtime.
+            const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${API_KEY}`;
+            const SYSTEM_PROMPT = "You are a friendly, concise, and professional Trade Learning Assistant. Your primary goal is to educate the user about cryptocurrency, trading fundamentals, indicators (like RSI, MACD), charts (like candlesticks), and risk management. Keep answers brief (max 3 sentences) unless the user asks for detail. Do not offer financial advice or predict prices.";
+            
+            let chatHistory = [];
+
+            async function sendMessage() {
+                const query = userInput.value.trim();
+                if (!query) return;
+
+                displayMessage(query, true);
+                userInput.value = '';
+                sendBtn.disabled = true;
+                sendBtn.textContent = 'Thinking...';
+                errorMessage.classList.add('hidden');
+
+                // Add user message to history
+                chatHistory.push({ role: "user", parts: [{ text: query }] });
+
+                const payload = {
+                    contents: chatHistory,
+                    tools: [{ "google_search": {} }], // Use Google Search for up-to-date info
+                    systemInstruction: {
+                        parts: [{ text: SYSTEM_PROMPT }]
+                    },
+                };
+
+                const MAX_RETRIES = 3;
+                let responseText = "Sorry, I encountered an error. Please try again.";
+                let sources = [];
+                
+                for (let i = 0; i < MAX_RETRIES; i++) {
+                    try {
+                        const response = await fetch(API_URL, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+
+                        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                        
+                        const result = await response.json();
+                        const candidate = result.candidates?.[0];
+
+                        if (candidate && candidate.content?.parts?.[0]?.text) {
+                            responseText = candidate.content.parts[0].text;
+                            
+                            // Extract sources if grounding was used
+                            const groundingMetadata = candidate.groundingMetadata;
+                            if (groundingMetadata && groundingMetadata.groundingAttributions) {
+                                sources = groundingMetadata.groundingAttributions
+                                    .map(attr => attr.web?.title)
+                                    .filter(title => title);
+                            }
+
+                            // Add the model's response to history
+                            chatHistory.push({ role: "model", parts: [{ text: responseText }] });
+                            
+                            break; // Success, exit retry loop
+
+                        } else {
+                            throw new Error("API response was empty or malformed.");
+                        }
+
+                    } catch (error) {
+                        console.error(`Attempt ${i + 1} failed:`, error);
+                        // Exponential backoff
+                        if (i < MAX_RETRIES - 1) {
+                            await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, i)));
+                        }
+                    }
+                }
+
+                sendBtn.disabled = false;
+                sendBtn.textContent = 'Send';
+                
+                // Add sources if available
+                if (sources.length > 0) {
+                    responseText += `<br><br><span class="text-xs text-gray-400 italic">Source: ${sources.join(', ')}</span>`;
+                }
+                
+                displayMessage(responseText, false);
+
+                if (responseText.includes("Sorry, I encountered an error")) {
+                     errorMessage.textContent = "Could not connect to the AI. Check console for details.";
+                     errorMessage.classList.remove('hidden');
+                }
+            }
+
+            sendBtn.addEventListener('click', sendMessage);
+
+            // Hide the error message on user input
+            userInput.addEventListener('input', () => {
+                errorMessage.classList.add('hidden');
+            });
+        });
+    </script>
+</body>
+</html>
+
 
