@@ -1,26 +1,513 @@
-disabled = false;
-                sendBtn.textContent = 'Send';
-                
-                // Add sources if available
-                if (sources.length > 0) {
-                    responseText += `<br><br><span class="text-xs text-gray-400 italic">Source: ${sources.join(', ')}</span>`;
-                }
-                
-                displayMessage(responseText, false);
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CBO Trade Learning App</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght=400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0F172A; /* Slate 900 */
+        }
+        .scroll-container {
+            height: 300px; /* Fixed height for chat/AI response area */
+            overflow-y: auto;
+        }
+        .trade-card {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
 
-                if (responseText.includes("Sorry, I encountered an error")) {
-                     errorMessage.textContent = "Could not connect to the AI. Check console for details.";
-                     errorMessage.classList.remove('hidden');
+    <!-- 1. CRITICAL LOADING AND ERROR CONTAINER (Initially visible) -->
+    <div id="loading-screen" class="fixed inset-0 bg-[#0F172A] flex flex-col items-center justify-center p-8 z-50 transition-opacity duration-500">
+        <h1 id="loading-title" class="text-3xl font-bold text-[#E0F2F1] mb-6">CBO Trade Learning</h1>
+        <div id="loading-spinner">
+            <svg class="animate-spin h-10 w-10 text-[#34D399]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+        </div>
+        <p id="loading-status" class="text-base text-[#94A3B8] mt-8 text-center">Loading local resources and fetching market data...</p>
+        <p id="loading-error" class="text-sm text-red-400 mt-4 text-center p-2 rounded-lg bg-red-900/30 hidden max-w-sm">
+            <!-- Specific error messages will appear here -->
+        </p>
+    </div>
+
+    <!-- 2. MAIN APPLICATION CONTAINER (Initially hidden) -->
+    <div id="app-container" class="flex flex-col flex-1 hidden">
+        
+        <!-- Header -->
+        <header class="bg-[#1E293B] pt-10 pb-4 px-4 flex justify-between items-center border-b border-[#334155]">
+            <h1 class="text-2xl font-bold text-[#E0F2F1]">CBO Trade Learning</h1>
+            <div class="text-xs text-[#60A5FA] border border-[#60A5FA] p-1 rounded-md max-w-[150px]">
+                User ID: <span id="user-id-display">Local User</span>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 overflow-y-auto p-4">
+
+            <!-- Trade View (Default) -->
+            <div id="trade-view" class="view-content space-y-4">
+                <h2 class="text-xl font-bold text-[#E0F2F1] border-l-4 border-[#34D399] pl-3">Testnet Trading Simulator</h2>
+                
+                <!-- Wallet Card -->
+                <div class="bg-[#1E293B] p-4 rounded-xl trade-card">
+                    <h3 class="text-lg font-semibold text-[#94A3B8] mb-2">Wallet Balance</h3>
+                    <p class="text-white text-base">USDT: <span id="wallet-usdt">$10000.00</span></p>
+                    <p class="text-white text-base">BTC: <span id="wallet-btc">0.5000</span></p>
+                </div>
+
+                <!-- Trade Card -->
+                <div class="bg-[#1E293B] p-4 rounded-xl trade-card">
+                    <h3 class="text-lg font-semibold text-[#94A3B8] mb-2">Place Test Order (BTC/USDT)</h3>
+                    <p class="text-white text-sm mb-3">Live Price: $<span id="btc-live-price">0.00</span></p>
+
+                    <input type="number" id="trade-amount" placeholder="Amount of BTC to Trade" 
+                           class="w-full p-3 bg-[#334155] text-white rounded-lg border border-[#475569] mb-4 placeholder-gray-400 focus:ring focus:ring-[#34D399] outline-none">
+                    
+                    <div class="flex space-x-4">
+                        <button id="buy-button" class="flex-1 bg-[#34D399] text-[#0F172A] font-bold py-3 rounded-lg shadow-lg hover:bg-[#2DD4BF] transition-colors">BUY</button>
+                        <button id="sell-button" class="flex-1 bg-[#EF4444] text-white font-bold py-3 rounded-lg shadow-lg hover:bg-[#F87171] transition-colors">SELL</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts View -->
+            <div id="charts-view" class="view-content hidden space-y-4">
+                <h2 class="text-xl font-bold text-[#E0F2F1] border-l-4 border-[#34D399] pl-3">Real-Time Charts & Indicators</h2>
+                
+                <!-- Chart Placeholder -->
+                <div class="bg-[#1E293B] h-72 rounded-xl flex flex-col items-center justify-center">
+                    <p class="text-xl font-bold text-white mb-2">BTC/USDT Candlestick Chart</p>
+                    <p class="text-xs text-[#94A3B8]">Placeholder for a specialized charting library.</p>
+                    <p id="price-update-time" class="text-sm text-[#34D399] mt-4">Last Updated: N/A</p>
+                </div>
+
+                <h3 class="text-lg font-semibold text-[#94A3B8] mt-6 mb-2">Market Overview (Live Prices)</h3>
+                <div id="price-list" class="space-y-1">
+                    <!-- Prices will be inserted here by JavaScript -->
+                    <p id="price-error-message" class="text-red-400 text-sm hidden bg-red-900/30 p-2 rounded-lg"></p>
+                </div>
+            </div>
+
+            <!-- Chat View -->
+            <div id="chat-view" class="view-content hidden flex flex-col h-[70vh]">
+                <h2 class="text-xl font-bold text-[#E0F2F1] border-l-4 border-[#34D399] pl-3 mb-4">Local Mock Chat</h2>
+                
+                <!-- Chat Messages Area -->
+                <div id="chat-messages" class="flex-1 bg-[#1E293B] p-3 rounded-t-xl scroll-container flex flex-col space-y-2">
+                    <div class="flex flex-col mb-1 w-full items-start">
+                        <div class="text-xs text-[#60A5FA] font-bold text-left mb-0.5">System Message</div>
+                        <div class="bg-[#334155] p-3 rounded-xl max-w-[80%] text-white">
+                            Chat is running locally. Messages will not be shared or saved.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chat Input -->
+                <div class="flex p-3 bg-[#1E293B] rounded-b-xl border-t border-[#334155]">
+                    <input type="text" id="chat-input" placeholder="Type your message here..."
+                           class="flex-1 p-3 bg-[#334155] text-white rounded-full mr-2 placeholder-gray-400 focus:ring focus:ring-[#60A5FA] outline-none">
+                    <button id="send-button" class="bg-[#60A5FA] text-white font-bold px-4 py-2 rounded-full hover:bg-[#3B82F6] transition-colors flex items-center justify-center">
+                        Send
+                    </button>
+                </div>
+            </div>
+
+            <!-- AI View -->
+            <div id="ai-view" class="view-content hidden space-y-4">
+                <h2 class="text-xl font-bold text-[#E0F2F1] border-l-4 border-[#34D399] pl-3">CB-AI Crypto Assistant</h2>
+
+                <textarea id="ai-prompt" placeholder="Ask CB-AI for a trade idea or analysis..." 
+                          class="w-full p-3 h-24 bg-[#334155] text-white rounded-lg border border-[#475569] placeholder-gray-400 focus:ring focus:ring-[#34D399] outline-none">Give me a risk assessment for holding ETH over the next quarter.</textarea>
+                
+                <button id="ai-button" class="w-full bg-[#34D399] text-[#0F172A] font-bold py-3 rounded-lg shadow-lg hover:bg-[#2DD4BF] transition-colors">
+                    Get CB-AI Analysis
+                </button>
+
+                <!-- AI Response Card -->
+                <div class="bg-[#1E293B] p-4 rounded-xl trade-card scroll-container">
+                    <h3 class="text-lg font-semibold text-[#94A3B8] mb-2">AI Response:</h3>
+                    <div id="ai-response" class="text-white text-sm whitespace-pre-wrap">Ask the AI for its first analysis or prediction!</div>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- Footer Navigation -->
+        <footer class="bg-[#1E293B] flex justify-around p-3 border-t border-[#334155]">
+            <button data-tab="trade" class="tab-button bg-[#34D399] text-[#0F172A] font-bold py-2 px-4 rounded-full">Trade</button>
+            <button data-tab="charts" class="tab-button text-white font-bold py-2 px-4 rounded-full hover:bg-[#34D399] hover:text-[#0F172A] transition-colors">Charts</button>
+            <button data-tab="chat" class="tab-button text-white font-bold py-2 px-4 rounded-full hover:bg-[#34D399] hover:text-[#0F172A] transition-colors">Chat</button>
+            <button data-tab="ai" class="tab-button text-white font-bold py-2 px-4 rounded-full hover:bg-[#34D399] hover:text-[#0F172A] transition-colors">AI</button>
+        </footer>
+    </div>
+
+    <!-- 3. JAVASCRIPT LOGIC (Self-Contained) -->
+    <script type="module">
+        
+        // --- Global Configuration ---
+        const GEMINI_API_KEY = ""; 
+        const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=";
+        const COINGECKO_URL = 'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin%2Cethereum%2Csolana&vs_currencies=usd&include_24hr_change=true';
+
+        // --- Core App State ---
+        let livePrices = [];
+        let wallet = { USDT: 10000.00, BTC: 0.5 };
+        let localChatMessages = [];
+        const LOCAL_USER_ID = 'Local Trader';
+
+        const CBO_PRICE_MOCK = { symbol: 'CBO', price: 0.12, change: '+5.1%', icon: '$' };
+        const SYMBOL_MAP = {
+            'bitcoin': { symbol: 'BTC', icon: '₿' },
+            'ethereum': { symbol: 'ETH', icon: 'Ξ' },
+            'solana': { symbol: 'SOL', icon: '◎' },
+        };
+
+        // --- UI Utility Functions ---
+
+        /**
+         * Loads wallet state from localStorage, defaulting if nothing is found.
+         */
+        function loadWallet() {
+            try {
+                const storedWallet = localStorage.getItem('cbo_wallet');
+                if (storedWallet) {
+                    wallet = JSON.parse(storedWallet);
+                }
+            } catch (e) {
+                console.warn("Could not load wallet from localStorage. Using default state.", e);
+            }
+        }
+
+        /**
+         * Saves current wallet state to localStorage.
+         */
+        function saveWallet() {
+            try {
+                localStorage.setItem('cbo_wallet', JSON.stringify(wallet));
+            } catch (e) {
+                console.error("Failed to save wallet to localStorage.", e);
+            }
+        }
+
+        /**
+         * Hides the loading screen and shows the main app content.
+         */
+        function showApp() {
+            document.getElementById('loading-screen').classList.add('opacity-0');
+            setTimeout(() => {
+                document.getElementById('loading-screen').classList.add('hidden');
+                document.getElementById('app-container').classList.remove('hidden');
+            }, 500); // Wait for transition
+            updateWalletUI(); // Initial wallet display
+        }
+
+        /**
+         * Switches the active content view.
+         * @param {string} tabName - 'trade', 'charts', 'chat', or 'ai'
+         */
+        function switchTab(tabName) {
+            document.querySelectorAll('.view-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`${tabName}-view`).classList.remove('hidden');
+
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                const isActive = btn.getAttribute('data-tab') === tabName;
+                btn.classList.toggle('bg-[#34D399]', isActive);
+                btn.classList.toggle('text-[#0F172A]', isActive);
+                btn.classList.toggle('bg-transparent', !isActive);
+                btn.classList.toggle('text-white', !isActive);
+            });
+            
+            // Ensure chat UI is refreshed when switching to it
+            if (tabName === 'chat') {
+                renderChatMessages();
+            }
+        }
+
+        /**
+         * Updates wallet display.
+         */
+        function updateWalletUI() {
+            document.getElementById('wallet-usdt').textContent = `$${wallet.USDT.toFixed(2)}`;
+            document.getElementById('wallet-btc').textContent = wallet.BTC.toFixed(4);
+            saveWallet(); // Save immediately after update
+        }
+
+        // --- Data Services ---
+
+        /**
+         * Renders the HTML for the price list.
+         */
+        function renderPriceList() {
+            const listContainer = document.getElementById('price-list');
+            listContainer.innerHTML = livePrices.map(item => {
+                const changeClass = item.change.startsWith('+') ? 'text-[#34D399]' : 'text-[#EF4444]';
+                const priceFixed = item.price.toFixed(item.symbol === 'CBO' ? 4 : 2);
+                
+                return `
+                    <div class="flex justify-between items-center p-3 bg-[#1E293B] rounded-lg border border-[#334155]">
+                        <span class="text-white font-bold w-1/3">${item.icon} ${item.symbol}</span>
+                        <span class="text-[#E0F2F1] w-1/3 text-right">$${priceFixed}</span>
+                        <span class="${changeClass} font-semibold w-1/3 text-right">${item.change}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        /**
+         * Fetches live prices from CoinGecko and updates the UI.
+         */
+        async function fetchPrices() {
+            document.getElementById('price-error-message').classList.add('hidden');
+            document.getElementById('loading-status').textContent = 'Fetching live market data...';
+            
+            // Show a temporary spinner in the charts view if it's visible
+            let chartStatus = document.getElementById('price-update-time');
+            chartStatus.textContent = 'Last Updated: Loading...';
+
+            try {
+                const response = await fetch(COINGECKO_URL);
+                if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
+                const data = await response.json();
+                
+                livePrices = Object.entries(data).map(([coinId, priceData]) => {
+                    const map = SYMBOL_MAP[coinId];
+                    const price = priceData.usd || 0;
+                    const change = priceData.usd_24h_change !== undefined ? priceData.usd_24h_change.toFixed(2) : '0.00';
+                    
+                    return {
+                        symbol: map.symbol,
+                        price: price,
+                        change: (parseFloat(change) > 0 ? '+' : '') + change + '%',
+                        icon: map.icon,
+                    };
+                });
+                
+                livePrices.push(CBO_PRICE_MOCK);
+                
+                // Update UI elements
+                renderPriceList();
+                document.getElementById('btc-live-price').textContent = livePrices.find(p => p.symbol === 'BTC')?.price?.toFixed(2) || '0.00';
+                chartStatus.textContent = `Last Updated: ${new Date().toLocaleTimeString()}`;
+            } catch (error) {
+                const errorMessage = `Price Fetch Failed: ${error.message}. Using mock/stale data.`;
+                document.getElementById('price-error-message').textContent = errorMessage;
+                document.getElementById('price-error-message').classList.remove('hidden');
+                console.error("CoinGecko API Fetch Error:", error);
+                chartStatus.textContent = `Last Updated: Failed`;
+            } 
+        }
+
+        /**
+         * Starts the data fetching and listening services.
+         */
+        function startDataServices() {
+            fetchPrices(); // Initial fetch
+            setInterval(fetchPrices, 60000); // Refresh every minute
+        }
+
+        // --- Event Handlers ---
+
+        /**
+         * Executes a testnet trade (Buy/Sell).
+         * @param {string} type - 'BUY' or 'SELL'
+         */
+        function executeTrade(type) {
+            const amountInput = document.getElementById('trade-amount');
+            const orderAmount = parseFloat(amountInput.value);
+            const symbol = 'BTC'; 
+            const currentPrice = livePrices.find(p => p.symbol === symbol)?.price || 0;
+            
+            let messageElement = document.getElementById('trade-message-box');
+            if (!messageElement) {
+                messageElement = document.createElement('div');
+                messageElement.id = 'trade-message-box';
+                document.getElementById('trade-view').prepend(messageElement);
+                messageElement.className = 'p-3 rounded-lg text-center font-bold mb-4 transition-all duration-300';
+            }
+
+            if (isNaN(orderAmount) || orderAmount <= 0 || currentPrice === 0) {
+                const msg = isNaN(orderAmount) || orderAmount <= 0 ? 'Trade Error: Enter a valid amount.' : 'Trade Error: Price not available.';
+                messageElement.textContent = msg;
+                messageElement.className = 'p-3 rounded-lg text-center font-bold mb-4 bg-yellow-600 text-white transition-all duration-300';
+                setTimeout(() => { messageElement.remove(); }, 5000);
+                return;
+            }
+
+            let success = false;
+            let transactionMsg = '';
+
+            if (type === 'BUY') {
+                const cost = orderAmount * currentPrice;
+                if (wallet.USDT >= cost) {
+                    wallet.USDT -= cost;
+                    wallet.BTC += orderAmount;
+                    success = true;
+                    transactionMsg = `SUCCESS! Bought ${orderAmount.toFixed(4)} BTC for $${cost.toFixed(2)} USDT.`;
+                } else {
+                    transactionMsg = `Trade FAILED: Insufficient USDT. Need $${cost.toFixed(2)}.`;
+                }
+            } else if (type === 'SELL') {
+                if (wallet.BTC >= orderAmount) {
+                    const proceeds = orderAmount * currentPrice;
+                    wallet.USDT += proceeds;
+                    wallet.BTC -= orderAmount;
+                    success = true;
+                    transactionMsg = `SUCCESS! Sold ${orderAmount.toFixed(4)} BTC for $${proceeds.toFixed(2)} USDT.`;
+                } else {
+                    transactionMsg = `Trade FAILED: Insufficient BTC balance.`;
                 }
             }
 
-            sendBtn.addEventListener('click', sendMessage);
+            messageElement.textContent = transactionMsg;
+            messageElement.className = `p-3 rounded-lg text-center font-bold mb-4 ${success ? 'bg-green-600' : 'bg-red-600'} text-white transition-all duration-300`;
+            
+            if (success) {
+                updateWalletUI();
+                amountInput.value = '';
+            }
+            setTimeout(() => { messageElement.remove(); }, 5000);
+        }
 
-            // Hide the error message on user input
-            userInput.addEventListener('input', () => {
-                errorMessage.classList.add('hidden');
+        /**
+         * Renders the local chat messages to the UI.
+         */
+        function renderChatMessages() {
+            const messagesContainer = document.getElementById('chat-messages');
+            let newMessagesHtml = localChatMessages.map(message => {
+                const isMyMessage = message.user === LOCAL_USER_ID;
+                const bubbleClass = isMyMessage ? 'bg-[#1C4532] self-end' : 'bg-[#334155] self-start';
+                const userTextClass = isMyMessage ? 'text-right' : 'text-left';
+                
+                return `
+                    <div class="flex flex-col mb-1 w-full items-${isMyMessage ? 'end' : 'start'}">
+                        <div class="text-xs text-[#60A5FA] font-bold ${userTextClass} mb-0.5">${message.user}</div>
+                        <div class="${bubbleClass} p-3 rounded-xl max-w-[80%] text-white">
+                            ${message.text}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // Prepend the system message for clarity
+            const systemMessage = `
+                <div class="flex flex-col mb-1 w-full items-start">
+                    <div class="text-xs text-[#60A5FA] font-bold text-left mb-0.5">System Message</div>
+                    <div class="bg-[#334155] p-3 rounded-xl max-w-[80%] text-white">
+                        Chat is running locally. Messages will not be shared or saved.
+                    </div>
+                </div>
+            `;
+
+            messagesContainer.innerHTML = systemMessage + newMessagesHtml;
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        /**
+         * Sends a message to the local chat array.
+         */
+        function sendMessage() {
+            const inputElement = document.getElementById('chat-input');
+            const messageText = inputElement.value.trim();
+
+            if (!messageText) return;
+
+            localChatMessages.push({
+                user: LOCAL_USER_ID,
+                text: messageText,
+                timestamp: Date.now(),
             });
-        });
+            inputElement.value = '';
+            renderChatMessages();
+        }
+
+        /**
+         * Calls the Gemini API for market analysis.
+         */
+        async function fetchAIAdvice() {
+            const prompt = document.getElementById('ai-prompt').value;
+            const responseElement = document.getElementById('ai-response');
+            const aiButton = document.getElementById('ai-button');
+
+            if (!prompt) return;
+            
+            if (!GEMINI_API_KEY) {
+                responseElement.textContent = "ERROR: Please insert your Gemini API Key into the GEMINI_API_KEY constant in the JavaScript section to enable AI.";
+                return;
+            }
+
+            aiButton.disabled = true;
+            aiButton.innerHTML = '<svg class="animate-spin h-5 w-5 text-[#0F172A] inline-block mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Analyzing...';
+            responseElement.textContent = "Analyzing market data and formulating advice...";
+            
+            try {
+                const currentPricesText = livePrices.map(p => `${p.symbol}: $${p.price.toFixed(2)} (${p.change})`).join(', ');
+                
+                const userQuery = `Current market snapshot: ${currentPricesText}. Act as a senior crypto analyst named 'CB-AI'. Give a concise, professional analysis for a Testnet trader based on this prompt: "${prompt}". Focus on past, present, and future price direction. Format the output clearly.`;
+                
+                const payload = {
+                    contents: [{ parts: [{ text: userQuery }] }],
+                    tools: [{ "google_search": {} }], 
+                    systemInstruction: { parts: [{ text: "You are an expert crypto market analyst named CB-AI. Provide only market analysis, predictions, and education." }] }
+                };
+
+                const response = await fetch(GEMINI_API_URL + GEMINI_API_KEY, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                const result = await response.json();
+                
+                const text = result.candidates?.[0]?.content?.parts?.[0]?.text || "Error: Could not retrieve AI advice. Check console for details.";
+                responseElement.textContent = text;
+
+            } catch (error) {
+                console.error("Gemini API Error:", error);
+                responseElement.textContent = `[API Error: Network issue or invalid response from the AI service. Check the console for full error details.]`;
+            } finally {
+                aiButton.disabled = false;
+                aiButton.textContent = 'Get CB-AI Analysis';
+            }
+        }
+
+
+        // --- Final Setup on Document Load ---
+        window.onload = function () {
+            // Load wallet state before starting the app
+            loadWallet();
+
+            // Start fetching prices and periodic updates
+            startDataServices();
+
+            // Show the main application immediately
+            showApp();
+
+            // Setup navigation event listeners
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.addEventListener('click', (e) => switchTab(e.currentTarget.getAttribute('data-tab')));
+            });
+
+            // Setup feature event listeners
+            document.getElementById('buy-button').addEventListener('click', () => executeTrade('BUY'));
+            document.getElementById('sell-button').addEventListener('click', () => executeTrade('SELL'));
+            document.getElementById('send-button').addEventListener('click', sendMessage);
+            document.getElementById('chat-input').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') { sendMessage(); }
+            });
+            document.getElementById('ai-button').addEventListener('click', fetchAIAdvice);
+
+            // Set initial tab
+            switchTab('trade');
+        };
     </script>
 </body>
 </html>
