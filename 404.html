@@ -1,101 +1,4 @@
-BTC -= orderAmount;
-                    success = true;
-                    transactionMsg = `SUCCESS! Sold ${orderAmount.toFixed(4)} BTC for $${proceeds.toFixed(2)} USDT.`;
-                } else {
-                    transactionMsg = `Trade FAILED: Insufficient BTC balance.`;
-                }
-            }
-
-            messageElement.textContent = transactionMsg;
-            messageElement.className = `p-3 rounded-lg text-center font-bold mb-4 ${success ? 'bg-green-600' : 'bg-red-600'} text-white transition-all duration-300`;
-            
-            if (success) {
-                updateWalletUI();
-                amountInput.value = '';
-            }
-            setTimeout(() => { messageElement.remove(); }, 5000);
-        }
-
-        /**
-         * Renders the local chat messages to the UI.
-         */
-        function renderChatMessages() {
-            const messagesContainer = document.getElementById('chat-messages');
-            let newMessagesHtml = localChatMessages.map(message => {
-                const isMyMessage = message.user === LOCAL_USER_ID;
-                const bubbleClass = isMyMessage ? 'bg-[#1C4532] self-end' : 'bg-[#334155] self-start';
-                const userTextClass = isMyMessage ? 'text-right' : 'text-left';
-                
-                return `
-                    <div class="flex flex-col mb-1 w-full items-${isMyMessage ? 'end' : 'start'}">
-                        <div class="text-xs text-[#60A5FA] font-bold ${userTextClass} mb-0.5">${message.user}</div>
-                        <div class="${bubbleClass} p-3 rounded-xl max-w-[80%] text-white">
-                            ${message.text}
-                        </div>
-                    </div>
-                `;
-            }).join('');
-
-            // Prepend the system message for clarity
-            const systemMessage = `
-                <div class="flex flex-col mb-1 w-full items-start">
-                    <div class="text-xs text-[#60A5FA] font-bold text-left mb-0.5">System Message</div>
-                    <div class="bg-[#334155] p-3 rounded-xl max-w-[80%] text-white">
-                        Chat is running locally. Messages will not be shared or saved.
-                    </div>
-                </div>
-            `;
-
-            messagesContainer.innerHTML = systemMessage + newMessagesHtml;
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        }
-
-        /**
-         * Sends a message to the local chat array.
-         */
-        function sendMessage() {
-            const inputElement = document.getElementById('chat-input');
-            const messageText = inputElement.value.trim();
-
-            if (!messageText) return;
-
-            localChatMessages.push({
-                user: LOCAL_USER_ID,
-                text: messageText,
-                timestamp: Date.now(),
-            });
-            inputElement.value = '';
-            renderChatMessages();
-        }
-
-        /**
-         * Calls the Gemini API for market analysis.
-         */
-        async function fetchAIAdvice() {
-            const prompt = document.getElementById('ai-prompt').value;
-            const responseElement = document.getElementById('ai-response');
-            const aiButton = document.getElementById('ai-button');
-
-            if (!prompt) return;
-            
-            if (!GEMINI_API_KEY) {
-                responseElement.textContent = "ERROR: Please insert your Gemini API Key into the GEMINI_API_KEY constant in the JavaScript section to enable AI.";
-                return;
-            }
-
-            aiButton.disabled = true;
-            aiButton.innerHTML = '<svg class="animate-spin h-5 w-5 text-[#0F172A] inline-block mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Analyzing...';
-            responseElement.textContent = "Analyzing market data and formulating advice...";
-            
-            try {
-                const currentPricesText = livePrices.map(p => `${p.symbol}: $${p.price.toFixed(2)} (${p.change})`).join(', ');
-                
-                const userQuery = `Current market snapshot: ${currentPricesText}. Act as a senior crypto analyst named 'CB-AI'. Give a concise, professional analysis for a Testnet trader based on this prompt: "${prompt}". Focus on past, present, and future price direction. Format the output clearly.`;
-                
-                const payload = {
-                    contents: [{ parts: [{ text: userQuery }] }],
-                    tools: [{ "google_search": {} }], 
-                    systemInstruction: { parts: [{ text: "You are an expert crypto market analyst named CB-AI. Provide only market analysis, predictions, and education." }] }
+systemInstruction: { parts: [{ text: "You are an expert crypto market analyst named CB-AI. Provide only market analysis, predictions, and education." }] }
                 };
 
                 const response = await fetch(GEMINI_API_URL + GEMINI_API_KEY, {
@@ -153,6 +56,9 @@ BTC -= orderAmount;
 
 
     
+                 
+        
+                    
 
                                 
 
