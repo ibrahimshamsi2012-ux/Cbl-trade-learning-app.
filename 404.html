@@ -1,62 +1,244 @@
-systemInstruction: { parts: [{ text: "You are an expert crypto market analyst named CB-AI. Provide only market analysis, predictions, and education." }] }
-                };
-
-                const response = await fetch(GEMINI_API_URL + GEMINI_API_KEY, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                
-                const result = await response.json();
-                
-                const text = result.candidates?.[0]?.content?.parts?.[0]?.text || "Error: Could not retrieve AI advice. Check console for details.";
-                responseElement.textContent = text;
-
-            } catch (error) {
-                console.error("Gemini API Error:", error);
-                responseElement.textContent = `[API Error: Network issue or invalid response from the AI service. Check the console for full error details.]`;
-            } finally {
-                aiButton.disabled = false;
-                aiButton.textContent = 'Get CB-AI Analysis';
-            }
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pro Crypto Trading Platform</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #0a0a0a;
+            color: #ffffff;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
         }
-
-
-        // --- Final Setup on Document Load ---
-        window.onload = function () {
-            // Load wallet state before starting the app
-            loadWallet();
-
-            // Start fetching prices and periodic updates
-            startDataServices();
-
-            // Show the main application immediately
-            showApp();
-
-            // Setup navigation event listeners
-            document.querySelectorAll('.tab-button').forEach(button => {
-                button.addEventListener('click', (e) => switchTab(e.currentTarget.getAttribute('data-tab')));
+        header {
+            background-color: #1a1a1a;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #333;
+        }
+        nav {
+            display: flex;
+            gap: 20px;
+        }
+        nav a {
+            color: #ffffff;
+            text-decoration: none;
+            padding: 10px;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        nav a:hover {
+            background-color: #333;
+        }
+        #ticker {
+            font-size: 14px;
+            color: #00ff00;
+        }
+        main {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+        #sidebar {
+            width: 300px;
+            background-color: #1a1a1a;
+            padding: 20px;
+            border-right: 1px solid #333;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        #order-book, #trading-form, #ai-insights {
+            background-color: #2a2a2a;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        #order-book h3, #trading-form h3, #ai-insights h3 {
+            margin-top: 0;
+        }
+        #order-book table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        #order-book th, #order-book td {
+            padding: 5px;
+            text-align: left;
+        }
+        #trading-form input, #trading-form button {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            border: none;
+            border-radius: 5px;
+        }
+        #trading-form button {
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+        }
+        #trading-form button:hover {
+            background-color: #0056b3;
+        }
+        #chart-container {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+        #chart {
+            flex: 1;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        #ai-insights p {
+            margin: 5px 0;
+        }
+        .green { color: #00ff00; }
+        .red { color: #ff0000; }
+    </style>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+</head>
+<body>
+    <header>
+        <h1>Pro Crypto Trading</h1>
+        <nav>
+            <a href="#markets">Markets</a>
+            <a href="#trading">Trading</a>
+            <a href="#portfolio">Portfolio</a>
+        </nav>
+        <div id="ticker">BTC/USDT: Loading...</div>
+    </header>
+    <main>
+        <aside id="sidebar">
+            <div id="order-book">
+                <h3>Order Book (BTC/USDT)</h3>
+                <table>
+                    <thead>
+                        <tr><th>Price</th><th>Amount</th></tr>
+                    </thead>
+                    <tbody id="bids"></tbody>
+                </table>
+                <hr>
+                <table>
+                    <thead>
+                        <tr><th>Price</th><th>Amount</th></tr>
+                    </thead>
+                    <tbody id="asks"></tbody>
+                </table>
+            </div>
+            <div id="trading-form">
+                <h3>Place Order</h3>
+                <input type="number" id="amount" placeholder="Amount">
+                <input type="number" id="price" placeholder="Price">
+                <button id="buy-btn">Buy</button>
+                <button id="sell-btn">Sell</button>
+            </div>
+            <div id="ai-insights">
+                <h3>AI Insights</h3>
+                <p id="ai-prediction">Analyzing market trends...</p>
+                <p id="ai-recommendation">Recommendation: Hold</p>
+            </div>
+        </aside>
+        <section id="chart-container">
+            <h2>Real-Time Chart (BTC/USDT)</h2>
+            <div id="chart"></div>
+        </section>
+    </main>
+    <script>
+        // Real-time ticker (using Binance API)
+        function updateTicker() {
+            $.getJSON('https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT', function(data) {
+                $('#ticker').text(`BTC/USDT: $${parseFloat(data.price).toFixed(2)}`);
             });
+        }
+        setInterval(updateTicker, 1000);
+        updateTicker();
 
-            // Setup feature event listeners
-            document.getElementById('buy-button').addEventListener('click', () => executeTrade('BUY'));
-            document.getElementById('sell-button').addEventListener('click', () => executeTrade('SELL'));
-            document.getElementById('send-button').addEventListener('click', sendMessage);
-            document.getElementById('chat-input').addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') { sendMessage(); }
+        // Order book simulation (mock data; replace with real API if available)
+        function updateOrderBook() {
+            const bids = [
+                { price: 45000, amount: 1.5 },
+                { price: 44950, amount: 2.0 },
+                { price: 44900, amount: 1.2 }
+            ];
+            const asks = [
+                { price: 45050, amount: 1.0 },
+                { price: 45100, amount: 1.8 },
+                { price: 45150, amount: 0.5 }
+            ];
+            $('#bids').html(bids.map(b => `<tr><td class="green">$${b.price}</td><td>${b.amount}</td></tr>`).join(''));
+            $('#asks').html(asks.map(a => `<tr><td class="red">$${a.price}</td><td>${a.amount}</td></tr>`).join(''));
+        }
+        updateOrderBook();
+        setInterval(updateOrderBook, 5000); // Update every 5s
+
+        // Trading form (mock; no real execution)
+        $('#buy-btn').click(() => alert('Buy order placed (mock)!'));
+        $('#sell-btn').click(() => alert('Sell order placed (mock)!'));
+
+        // AI Insights (mock AI simulation)
+        function updateAI() {
+            const predictions = ['Bullish trend detected', 'Bearish signal', 'Neutral market'];
+            const recommendations = ['Buy', 'Sell', 'Hold'];
+            $('#ai-prediction').text(predictions[Math.floor(Math.random() * predictions.length)]);
+            $('#ai-recommendation').text(`Recommendation: ${recommendations[Math.floor(Math.random() * recommendations.length)]}`);
+        }
+        updateAI();
+        setInterval(updateAI, 10000); // Update every 10s
+
+        // Real-time chart with indicators (using Lightweight Charts)
+        const chart = LightweightCharts.createChart(document.getElementById('chart'), {
+            width: document.getElementById('chart').clientWidth,
+            height: 400,
+            layout: { backgroundColor: '#0a0a0a', textColor: '#ffffff' },
+            grid: { vertLines: { color: '#333' }, horzLines: { color: '#333' } },
+        });
+        const candlestickSeries = chart.addCandlestickSeries();
+        const volumeSeries = chart.addHistogramSeries({ color: '#26a69a' });
+
+        // Fetch historical data and simulate real-time (using Binance API)
+        function fetchChartData() {
+            $.getJSON('https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1m&limit=100', function(data) {
+                const candles = data.map(d => ({
+                    time: d[0] / 1000,
+                    open: parseFloat(d[1]),
+                    high: parseFloat(d[2]),
+                    low: parseFloat(d[3]),
+                    close: parseFloat(d[4])
+                }));
+                const volumes = data.map(d => ({ time: d[0] / 1000, value: parseFloat(d[5]) }));
+                candlestickSeries.setData(candles);
+                volumeSeries.setData(volumes);
+
+                // Add indicators (e.g., SMA)
+                const smaSeries = chart.addLineSeries({ color: '#ff9800', lineWidth: 2 });
+                const smaData = candles.map((c, i) => {
+                    if (i < 20) return null;
+                    const sum = candles.slice(i - 20, i).reduce((a, b) => a + b.close, 0);
+                    return { time: c.time, value: sum / 20 };
+                }).filter(d => d);
+                smaSeries.setData(smaData);
             });
-            document.getElementById('ai-button').addEventListener('click', fetchAIAdvice);
+        }
+        fetchChartData();
+        setInterval(fetchChartData, 60000); // Update every minute
 
-            // Set initial tab
-            switchTab('trade');
-        };
+        // Resize chart on window resize
+        window.addEventListener('resize', () => {
+            chart.applyOptions({ width: document.getElementById('chart').clientWidth });
+        });
     </script>
 </body>
 </html>
 
-
-    
-                 
         
                     
 
