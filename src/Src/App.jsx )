@@ -1,1 +1,95 @@
+// src/App.jsx
+
+import React, { useState, useEffect } from 'react';
+import { auth } from './firebaseConfig'; // Import your Firebase auth instance
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
+
+function App() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [user, setUser] = useState(null);
+  const [error, setError] = useState('');
+
+  // Listen for authentication state changes
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+    });
+    // Cleanup subscription on unmount
+    return () => unsubscribe();
+  }, []);
+
+  const handleSignUp = async () => {
+    setError(''); // Clear previous errors
+    try {
+      await createUserWithEmailAndPassword(auth, email, password);
+      // User will be automatically set by onAuthStateChanged listener
+    } catch (err) {
+      setError(err.message);
+      console.error("Sign up error:", err.message);
+    }
+  };
+
+  const handleSignIn = async () => {
+    setError(''); // Clear previous errors
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      // User will be automatically set by onAuthStateChanged listener
+    } catch (err) {
+      setError(err.message);
+      console.error("Sign in error:", err.message);
+    }
+  };
+
+  const handleSignOut = async () => {
+    setError(''); // Clear previous errors
+    try {
+      await signOut(auth);
+      // User will be automatically set to null by onAuthStateChanged listener
+    } catch (err) {
+      setError(err.message);
+      console.error("Sign out error:", err.message);
+    }
+  };
+
+  return (
+    <div style={{ padding: '20px', fontFamily: 'sans-serif' }}>
+      <h1>CBL Trade Learning App</h1>
+
+      {user ? (
+        <div>
+          <h2>Welcome, {user.email}!</h2>
+          <p>You are logged in.</p>
+          <button onClick={handleSignOut}>Sign Out</button>
+          {/* Here you'll add your game, AI advice, and real-time data components */}
+          <p>This is where your testnet game and trading dashboards will go!</p>
+        </div>
+      ) : (
+        <div>
+          <h2>Sign Up / Sign In</h2>
+          <input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            style={{ margin: '5px', padding: '8px' }}
+          />
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            style={{ margin: '5px', padding: '8px' }}
+          />
+          <br />
+          <button onClick={handleSignUp} style={{ margin: '5px', padding: '10px' }}>Sign Up</button>
+          <button onClick={handleSignIn} style={{ margin: '5px', padding: '10px' }}>Sign In</button>
+          {error && <p style={{ color: 'red' }}>Error: {error}</p>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default App;
 
